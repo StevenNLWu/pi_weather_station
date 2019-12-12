@@ -42,38 +42,6 @@ SLASH_N = "\n"
 b = [0, 0, 255]  # blue
 r = [255, 0, 0]  # red
 e = [0, 0, 0]  # empty
-# create images for up and down arrows
-arrow_up = [
-    e, e, e, r, r, e, e, e,
-    e, e, r, r, r, r, e, e,
-    e, r, e, r, r, e, r, e,
-    r, e, e, r, r, e, e, r,
-    e, e, e, r, r, e, e, e,
-    e, e, e, r, r, e, e, e,
-    e, e, e, r, r, e, e, e,
-    e, e, e, r, r, e, e, e
-]
-arrow_down = [
-    e, e, e, b, b, e, e, e,
-    e, e, e, b, b, e, e, e,
-    e, e, e, b, b, e, e, e,
-    e, e, e, b, b, e, e, e,
-    b, e, e, b, b, e, e, b,
-    e, b, e, b, b, e, b, e,
-    e, e, b, b, b, b, e, e,
-    e, e, e, b, b, e, e, e
-]
-bars = [
-    e, e, e, e, e, e, e, e,
-    e, e, e, e, e, e, e, e,
-    r, r, r, r, r, r, r, r,
-    r, r, r, r, r, r, r, r,
-    b, b, b, b, b, b, b, b,
-    b, b, b, b, b, b, b, b,
-    e, e, e, e, e, e, e, e,
-    e, e, e, e, e, e, e, e
-]
-
 
 def c_to_f(input_temp):
     # convert input_temp from Celsius to Fahrenheit
@@ -138,6 +106,9 @@ def main():
     if last_minute == 0:
         last_minute = 59
 
+    # select {0, 90, 180, 270}, if you need to rotate the HAT
+    sense.set_rotation(180);
+
     # infinite loop to continuously check weather values
     while 1:
         # The temp measurement smoothing algorithm's accuracy is based
@@ -169,6 +140,10 @@ def main():
             pressure = round(sense.get_pressure() * 0.0295300, 1)
             print("Temp: %sF (%sC), Pressure: %s inHg, Humidity: %s%%" % (temp_f, temp_c, pressure, humidity))
 
+            # display the temp using the HAT's LED light
+            msg = "%sC"% (temp_c)
+            sense.show_message(msg, scroll_speed=0.1, text_colour=r)
+
             # get the current minute
             current_minute = datetime.datetime.now().minute
             # is it the same minute as the last time we checked?
@@ -181,18 +156,6 @@ def main():
                     # get the reading timestamp
                     now = datetime.datetime.now()
                     print("\n%d minute mark (%d @ %s)" % (MEASUREMENT_INTERVAL, current_minute, str(now)))
-                    # did the temperature go up or down?
-                    if last_temp != temp_f:
-                        if last_temp > temp_f:
-                            # display a blue, down arrow
-                            sense.set_pixels(arrow_down)
-                        else:
-                            # display a red, up arrow
-                            sense.set_pixels(arrow_up)
-                    else:
-                        # temperature stayed the same
-                        # display red and blue bars
-                        sense.set_pixels(bars)
                     # set last_temp to the current temperature before we measure again
                     last_temp = temp_f
 
