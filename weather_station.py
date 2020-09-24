@@ -19,7 +19,12 @@ from urllib import urlencode
 import urllib2
 from sense_hat import SenseHat
 
+import pymongo
+from pymongo import MongoClient
+import json
+
 from config import Config
+from config import MongoConfig
 
 # ============================================================================
 # Constants
@@ -35,6 +40,9 @@ WU_URL = "http://weatherstation.wunderground.com/weatherstation/updateweathersta
 SINGLE_HASH = "#"
 HASHES = "########################################"
 SLASH_N = "\n"
+# enable or disable upload of MongoDB
+MONGODB_UPLOAD = True
+
 
 # constants used to display an up and down arrows plus bars
 # modified from https://www.raspberrypi.org/learning/getting-started-with-the-sense-hat/worksheet/
@@ -142,7 +150,7 @@ def main():
 
             # display the temp using the HAT's LED light
             msg = "%sC"% (temp_c)
-            sense.show_message(msg, scroll_speed=0.1, text_colour=r)
+            sense.show_message(msg, scroll_speed=0.1, text_colour=b)
 
             # get the current minute
             current_minute = datetime.datetime.now().minute
@@ -187,6 +195,33 @@ def main():
                             print("Exception:", sys.exc_info()[0], SLASH_N)
                     else:
                         print("Skipping Weather Underground upload")
+                    
+                    # ========================================================
+                    # Upload weather data to my mongoDB
+                    # ========================================================
+                    # is my mongoDB upload enabled (True)?
+                    if MONGODB_UPLOAD:
+                        # our weather data
+                        weather_maindata = {
+                            "temperature": str(temp_c),
+                            "humidity": str(humidity),
+                            "pressure": str(pressure),
+                            "device": os.uname()[1],
+                            "uploadDatetime" : datetime.datetime.now().replace(microsecond=0).isoformat(),
+                        }
+                        try:
+                            # connection
+                            print("uploading data to my mongoDB")
+                            client = MongoClient(mongoConfig.MONGODB_URL)
+                            db = client.db(mongoConfig.DB_NAME)
+                            db.collection('weather_data')
+                            # post
+                            result = db.reviews.insert_one(weather_data)
+                            print("mongoDB response:", result)
+                        except:
+                            print("Exception:", sys.exc_info()[0], SLASH_N)
+                    else:
+                        print("Skipping mongoDB upload")
 
         # wait a second then check again
         # You can always increase the sleep value below to check less often
